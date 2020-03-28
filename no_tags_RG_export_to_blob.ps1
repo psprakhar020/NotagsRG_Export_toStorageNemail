@@ -105,11 +105,10 @@ Catch
         else
         {
             
-            $object1 = [PSCustomobject]@{
-                
-                ResourceGroupName= $resourceGroupName
-				
-		    } 
+            $object1 = [PSCustomobject]@{                
+                ResourceGroupName= $resourceGroupName				
+		    }
+ 
             $arr += $object1
         
             Write-Output "$resourceGroupName has no tags set."
