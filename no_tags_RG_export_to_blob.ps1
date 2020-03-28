@@ -1,7 +1,10 @@
-﻿#Define Parameters
+#Parameters Definition
+
+#Paramters for outputfile
 $date= Get-date -UFormat "%d%m%Y"
-$report = @()
 $outputfile = "RGwithoutTags_"+$date+".csv"
+$arr= @()
+
 
 #Pass the credentials
 #Need to define credential by name TEST in credential tab of automation account
@@ -12,6 +15,13 @@ $smtp = "smtp.office365.com" #SMTP server
 $port= #Port of the smtp server
 $body = "Attached List of resource group that does not have tags"
 
+
+#Parmeters for Storage Account
+$AzStorAccName = "xxxxx"
+$AzResGroup = "xxxxx-rg"
+$filesharename = "xxxx"
+$localFile = ".\"+$outputfile 
+$dest = "RG_without_Tags\"+$outputfile
 
 
 #Connect to Tenant Domain id
@@ -94,7 +104,13 @@ Catch
         }
         else
         {
-            $resourceGroupName
+            
+            $object1 = [PSCustomobject]@{
+                
+                ResourceGroupName= $resourceGroupName
+				
+		    } 
+            $arr += $object1
         
             Write-Output "$resourceGroupName has no tags set."
         }
@@ -102,21 +118,7 @@ Catch
 
     }
 
-
-#Send mail to respective user
-Send-MailMessage -From $User -To $to -Subject "Azure Virtual Machine Orphan Disks" -Body $body -Attachments "Unmanageddisk.csv" -Priority High -Port $port -SmtpServer $smtp -Credential $credentials -UseSsl
-
-###################################################################################################################
-#need to work on below ones
-
 $arr | Export-Csv -Path $outputfile -NoTypeInformation -Force
-
-set-AzureRmContext -SubscriptionName "AABNL AZ Management" | Out-Null
-$AzStorAccName = "xxxxx"
-$AzResGroup = "xxxxx-rg"
-$filesharename = "xxxx"
-$localFile = ".\"+$outputfile 
-$dest = "Check basic performance stats\"+$outputfile
 
 # get the central storage account name
 $AzStrAct = Get-AzureRmStorageAccount -Name $AzStorAccName -ResourceGroupName $AzResGroup
@@ -129,6 +131,9 @@ $AzStrCtx = New-AzureStorageContext $AzStorAccName -StorageAccountKey $AzStrKey[
 
 #transfer the file to common storage
 Set-AzureStorageFileContent -ShareName $filesharename -Context $AzStrCtx –Source $localFile -Path $dest 
+
+#Send mail to respective user
+Send-MailMessage -From $User -To $to -Subject "Azure Virtual Machine Orphan Disks" -Body $body -Attachments $outputfile -Priority High -Port $port -SmtpServer $smtp -Credential $credentials -UseSsl
 
 #Delete the file once file has been transfered
 rm $outputfile
